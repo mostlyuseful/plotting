@@ -1,0 +1,23 @@
+== penwidthcalib.py ==
+
+Generate zig-zag pattern to find out real drawing pen width
+Parameters: 
+  x0, y0
+  width, height
+  delta x, delta y (same?)
+
+delta x and delta y are scale factors for pixels later on to convert pixel location -> world location
+
+== hpgl2gcode.py ==
+
+generate pen up / pen down, map x,y via transformation matrix to world locations, etc.
+
+== img2lines.py ==
+
+Process image as blobs, flood-fill using last direction if possible to generate long lines of ink
+Other idea: Trace outlines
+
+== svg2lines.py ==
+
+svg -> postscript -> hpgl -> gcode
+
