@@ -53,6 +53,7 @@ pkglibdir = $(libdir)/$(PACKAGE)
 
 
 sample_drivers_src=drvsampl.cpp drvsampl.h
+plotme_drivers_src=drvplotme.cpp drvplotme.h
 specific_drivers_src=				\
 	drvgnplt.cpp drvgnplt.h			\
 	drvtgif.cpp drvtgif.h			\
@@ -90,7 +91,8 @@ libp2edrvstd_la_SOURCES=			\
 	drvvtk.cpp	drvvtk.h                \
 	drvsvm.cpp	drvsvm.h svm_actions.h	\
 	$(specific_drivers_src)                 \
-        $(sample_drivers_src)                   
+	$(sample_drivers_src)                   \
+	$(plotme_drivers_src)
 libp2edrvstd_la_LIBADD=libpstoedit.la
 libp2edrvstd_la_LDFLAGS=-no-undefined -module
 
