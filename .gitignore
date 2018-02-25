@@ -1,2 +1,14 @@
 /docs/build/
 /pstoedit/prefix/
+/pstoedit/pstoedit-3.70/autom4te.cache/
+/pstoedit/pstoedit-3.70/config.log
+/pstoedit/pstoedit-3.70/src/stamp-h1
+/pstoedit/pstoedit-3.70/compile
+/pstoedit/pstoedit-3.70/config.status
+/pstoedit/pstoedit-3.70/libtool
+/pstoedit/pstoedit-3.70/config/pstoedit.pc
+*~
+/pstoedit/pstoedit-3.70/src/pstoedit
+/pstoedit/pstoedit-3.70/src/pstoedit_config.h
+*.fcstd1
+*.FCStd1
