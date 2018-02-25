@@ -12,3 +12,5 @@
 /pstoedit/pstoedit-3.70/src/pstoedit_config.h
 *.fcstd1
 *.FCStd1
+/ir-diff/python/ir-diff-probe/.ipynb_checkpoints/
+.idea/
