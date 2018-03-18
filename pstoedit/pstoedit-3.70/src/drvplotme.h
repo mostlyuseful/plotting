@@ -40,9 +40,6 @@ public:
 #include "drvfuncs.h"
 
 private:
-    void print_coords();
-
-
 };
 
 #endif
