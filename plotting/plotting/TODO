@@ -1,0 +1,67 @@
+== penwidthcalib.py ==
+
+Generate zig-zag pattern to find out real drawing pen width
+Parameters: 
+  x0, y0
+  width, height
+  delta x, delta y (same?)
+
+delta x and delta y are scale factors for pixels later on to convert pixel location -> world location
+
+== hpgl2gcode.py ==
+
+generate pen up / pen down, map x,y via transformation matrix to world locations, etc.
+
+== img2lines.py ==
+
+Process image as blobs, flood-fill using last direction if possible to generate long lines of ink
+Other idea: Trace outlines
+
+== svg2lines.py ==
+
+svg -> postscript -> hpgl -> gcode
+
+
+
+
+
+
+
+
+
+
+
+from itertools import repeat
+from pipetools import pipe
+
+
+
+overdraw_amount = 0.5
+prepare = pipe \
+          | (lambda pc: overdraw_path_coll(pc, 0.5)) \
+          | sort_path \
+          | (lambda pc: pc.translate_to_origin()) \
+          | (lambda pc: pc.translate(min(plater_xx), min(plater_yy))) \
+          | (lambda pc: gen_gcode(pc.paths))
+gcode_lines = list(prepare(path_coll))
+with open('r2.gcode', 'w') as f:
+    f.writelines(l + '\n' for l in gcode_lines)
+
+
+
+
+def generate_filling_pattern_file():
+    pattern = filling_pattern(20, 5, 0.25)
+    np.vstack([pattern.x, pattern.y])
+    path_coll = PathCollection([pattern])
+    origin_x, origin_y = 60, 90
+    prepare = pipe \
+              | (lambda pc: overdraw_path_coll(pc, 0.5)) \
+              | sort_path \
+              | (lambda pc: pc.translate_to_origin()) \
+              | (lambda pc: pc.translate(origin_x, origin_y)) \
+              | (lambda pc: gen_gcode(pc.paths))
+
+    gcode_lines = list(prepare(path_coll))
+    with open('fill.gcode', 'w') as f:
+        f.writelines(l + '\n' for l in gcode_lines)
