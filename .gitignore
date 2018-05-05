@@ -14,3 +14,4 @@
 *.FCStd1
 /ir-diff/python/ir-diff-probe/.ipynb_checkpoints/
 .idea/
+*.pyc
