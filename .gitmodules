@@ -4,3 +4,9 @@
 [submodule "polyfill/external/debugbreak"]
 	path = polyfill/external/debugbreak
 	url = https://github.com/scottt/debugbreak.git
+[submodule "plotting/plotting/polyfill/external/range-v3"]
+	path = plotting/plotting/polyfill/external/range-v3
+	url = https://github.com/ericniebler/range-v3.git
+[submodule "plotting/plotting/polyfill/external/debugbreak"]
+	path = plotting/plotting/polyfill/external/debugbreak
+	url = https://github.com/scottt/debugbreak.git
