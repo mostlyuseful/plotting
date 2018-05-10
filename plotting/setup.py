@@ -1,23 +1,18 @@
 from setuptools import setup, Extension
 
-USE_CYTHON = True   # command line option, try-import, ...
-ext = '.pyx' if USE_CYTHON else '.c'
-
 extensions = [
-  #Extension("plotting.pyxfill", ["plotting/pyxfill"+ext]),
-  Extension("plotting.polyfill._polyfill", 
-            ["plotting/polyfill/polyfill_wrap.cxx"],
-            include_dirs=[
-              "plotting/polyfill/external/range-v3/include/",
-              "plotting/polyfill/external/debugbreak/"
-            ],
-            extra_compile_args=["-std=c++1z"],
-            )
+    Extension("plotting.polyfill._polyfill",
+              # ["plotting/polyfill/polyfill_wrap_boost.cxx"],
+              ["plotting/polyfill/polyfill_wrap_pybind.cxx"],
+              include_dirs=[
+                  "plotting/polyfill/external/pybind11/include",
+                  "plotting/polyfill/external/range-v3/include/",
+                  "plotting/polyfill/external/debugbreak/"
+              ],
+              libraries=["boost_python-py35", "python3.5m"],
+              extra_compile_args=["-std=c++1z", "-ftime-report"],
+              )
 ]
-
-#if USE_CYTHON:
-#    from Cython.Build import cythonize
-#    extensions = cythonize(extensions)
 
 setup(name='plotting',
       version='0.1',
@@ -28,5 +23,5 @@ setup(name='plotting',
       license='MIT',
       packages=['plotting'],
       #py_modules= ["plotting.polyfill"],
-      ext_modules = extensions,
+      ext_modules=extensions,
       zip_safe=False)

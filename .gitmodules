@@ -10,3 +10,6 @@
 [submodule "plotting/plotting/polyfill/external/debugbreak"]
 	path = plotting/plotting/polyfill/external/debugbreak
 	url = https://github.com/scottt/debugbreak.git
+[submodule "plotting/plotting/polyfill/external/pybind11"]
+	path = plotting/plotting/polyfill/external/pybind11
+	url = https://github.com/pybind/pybind11.git

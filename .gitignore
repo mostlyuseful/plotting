@@ -15,3 +15,11 @@
 /ir-diff/python/ir-diff-probe/.ipynb_checkpoints/
 .idea/
 *.pyc
+.ipynb_checkpoints/
+build/
+*.egg-info/
+*.so
+*.bak
+.vscode/
+.kdev4/
+*.kdev4

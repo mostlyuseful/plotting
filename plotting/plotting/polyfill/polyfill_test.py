@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from matplotlib import pyplot as plt
-import polyfill
+import _polyfill as polyfill
 from timeit import timeit
 
 xx = [1, 2, 3, 0.3, 3.7, 1]
