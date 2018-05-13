@@ -21,9 +21,14 @@
 #include <map>
 #include <set>
 
-struct Span {
+class Span {
+public:
     double x0;
     double x1;
+
+    inline Span(double x0=std::numeric_limits<double>::quiet_NaN(), double x1=std::numeric_limits<double>::quiet_NaN()): x0(x0), x1(x1){}
+    inline Span(Span const& span) = default;
+    inline Span(Span&& span) = default;
 };
 
 struct RasterLine {
@@ -36,7 +41,8 @@ struct RasterLine {
         : y(y), spans(std::move(spans)) {}
 };
 
-struct Polygon {
+class Polygon {
+    public:
     Eigen::ArrayXd xs;
     Eigen::ArrayXd ys;
 
@@ -115,7 +121,7 @@ struct Polygon {
                              xx_sorted | view::tail | view::stride(2));
 
         for (auto pair : rng) {
-            spans.push_back(Span{pair.first, pair.second});
+            spans.push_back(Span(pair.first, pair.second));
         }
 
         return spans;
@@ -155,15 +161,13 @@ struct Polygon {
         auto fill_active_edges = [](std::deque<Edge> const &remaining_edges,
                                     std::vector<Edge> const &active_edges,
                                     double const y) {
-            std::deque<Edge> new_remaining_edges(remaining_edges);
+            std::deque<Edge> new_remaining_edges;
             std::vector<Edge> new_active_edges(active_edges);
-            while (!new_remaining_edges.empty()) {
-                auto const &front = new_remaining_edges.front();
-                if ((front.ymin < y) && (y <= front.ymax)) {
-                    new_active_edges.push_back(front);
-                    new_remaining_edges.pop_front();
-                } else {
-                    break;
+            for(auto const& e : remaining_edges) {
+                if ((y > e.ymin) && (y <= e.ymax)) {
+                    new_active_edges.push_back(e);
+                }else {
+                    new_remaining_edges.push_back(e);
                 }
             }
             return std::make_pair(new_remaining_edges, new_active_edges);
@@ -221,15 +225,5 @@ struct Polygon {
         return output;
     }
 };
-
-inline std::vector<RasterLine>
-raster_polygon(std::vector<double> xx, std::vector<double> yy, double dy = 1) {
-    auto &&xs =
-        Eigen::Map<Eigen::ArrayXd>(xx.data(), static_cast<Eigen::Index>(xx.size()));
-    auto &&ys = Eigen::Map<Eigen::ArrayXd>(
-        yy.data(), static_cast<Eigen::Index>(yy.size()));
-    Polygon pgon(xs, ys);
-    return pgon.raster(dy);
-}
 
 #endif

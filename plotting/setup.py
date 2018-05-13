@@ -10,7 +10,7 @@ extensions = [
                   "plotting/polyfill/external/debugbreak/"
               ],
               libraries=["boost_python-py35", "python3.5m"],
-              extra_compile_args=["-std=c++1z", "-ftime-report"],
+              extra_compile_args=["-std=c++1z"] #, "-ftime-report"],
               )
 ]
 
