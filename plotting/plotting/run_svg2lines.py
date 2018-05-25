@@ -1,7 +1,6 @@
 from pipetools import pipe
 from plotting.svg2lines import ServodPenGcodeEmitter, overdraw_path_coll, sort_path, Rectangle, convert_svg_to_pltme, \
     parse_pltme, Path, PathCollection
-from plotting.polyfill import polyfill
 from matplotlib import pyplot as plt
 from matplotlib import patches
 

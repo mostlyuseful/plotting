@@ -155,14 +155,13 @@ def discard_stale_edges(active_edges: List[Edge], y: float):
 
 
 def fill_active_edges(remaining_edges, active_edges, y):
-    new_remaining_edges = remaining_edges[::]
+    new_remaining_edges = []
     new_active_edges = active_edges[::]
-    while new_remaining_edges:
-        front = new_remaining_edges[0]  # type: Edge
-        if front.ymin < y <= front.ymax:
-            new_active_edges.append(new_remaining_edges.pop(0))
+    for e in remaining_edges:
+        if e.ymin < y <= e.ymax:
+            new_active_edges.append(e)
         else:
-            break
+            new_remaining_edges.append(e)
     return new_remaining_edges, new_active_edges
 
 

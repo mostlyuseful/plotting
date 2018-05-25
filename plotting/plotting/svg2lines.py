@@ -8,10 +8,18 @@ from typing import Iterable
 PSTOEDIT_CMD = '/home/moe/dev/plotter/pstoedit/prefix/bin/pstoedit'
 
 
+def convert_ps_to_pltme(ps_path, pstoedit_cmd=PSTOEDIT_CMD):
+    subprocess.check_call([pstoedit_cmd, '-f', 'plotme',
+                           ps_path, '__tmp__.pltme'])
+    with io.open('__tmp__.pltme') as f:
+        raw = f.read()
+    return raw
+
+
 def convert_svg_to_pltme(svg_path, pstoedit_cmd=PSTOEDIT_CMD):
     subprocess.check_call(['cairosvg', svg_path, '-o', '__tmp__.ps'])
     subprocess.check_call([pstoedit_cmd, '-f', 'plotme',
-                           '__tmp__.ps', '-o', '__tmp__.pltme'])
+                           '__tmp__.ps', '__tmp__.pltme'])
     with io.open('__tmp__.pltme') as f:
         raw = f.read()
     return raw
@@ -33,8 +41,8 @@ class Path(object):
                     color=self.color)
 
     def scale(self, factor):
-        return Path(x=factor*np.asanyarray(self.x),
-                    y=factor*np.asanyarray(self.y),
+        return Path(x=factor * np.asanyarray(self.x),
+                    y=factor * np.asanyarray(self.y),
                     style=self.style,
                     color=self.color)
 
@@ -86,9 +94,14 @@ class Rectangle(object):
 
     def __contains__(self, other) -> bool:
         return other.xmin >= self.xmin and \
-            other.ymin >= self.ymin and \
-            other.width <= self.width and \
-            other.height <= self.height
+               other.ymin >= self.ymin and \
+               other.width <= self.width and \
+               other.height <= self.height
+
+    def __str__(self):
+        return "<Rectangle {.1f} x {.1f} @ ({.1f}, {.1f})".format(self.width, self.height, self.xmin, self.ymin)
+
+    __repr__ = __str__
 
 
 class PathCollection(object):
@@ -132,8 +145,9 @@ class PathCollection(object):
 
 
 def parse_color(parts):
-    r,g,b = [float(_) for _ in parts]
-    return r,g,b
+    r, g, b = [float(_) for _ in parts]
+    return r, g, b
+
 
 def parse_pltme(source: str) -> PathCollection:
     paths = []
@@ -141,7 +155,7 @@ def parse_pltme(source: str) -> PathCollection:
     yy = []
     path_style = None
     color = None
-    
+
     def output():
         nonlocal xx, yy, paths, path_style, color
         if not xx:
@@ -337,7 +351,20 @@ def sort_path(path_coll):
     return PathCollection(out)
 
 
+def is_path_closed(path):
+    if len(path.x) <= 2:
+        return False
+    x0, x1 = path.x[0], path.x[-1]
+    y0, y1 = path.y[0], path.y[-1]
+    p0 = x0, y0
+    p1 = x1, y1
+    d = distance(p0, p1)
+    return d < 1e-3
+
+
 def overdraw_path(path, amount):
+    if (not is_path_closed(path)):
+        return path
     out_x = np.copy(path.x).tolist()  # type: list
     out_y = np.copy(path.y).tolist()  # type: list
     remaining = amount
@@ -402,7 +429,3 @@ def filling_pattern(width, height, delta):
 
 def reversed_path(path: Path):
     return Path(path.x[::-1], path.y[::-1], path.style, path.color)
-
-
-def merge_close_paths(paths: PathCollection, merge_distance_max: float):
-    pass

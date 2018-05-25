@@ -109,9 +109,9 @@ void drvPLOTME::show_path() {
             // endpoint and use that to help pick the number of segments to use.
             const float dist = pythagoras((float)(ep.x_ - currentPoint.x_),
                                           (float)(ep.y_ - currentPoint.y_));
-            errf << "dist:" << dist << std::endl;
+            // errf << "dist:" << dist << std::endl;
             unsigned int fitpoints = dist / fitpoints_scale_factor;
-            errf << "fitpoints:" << fitpoints << std::endl;
+            // errf << "fitpoints:" << fitpoints << std::endl;
             fitpoints = std::clamp(fitpoints, min_fitpoints, max_fitpoints);
 
             for (unsigned int s = 1; s < fitpoints; s++) {
@@ -133,7 +133,7 @@ void drvPLOTME::show_path() {
 static DriverDescriptionT<drvPLOTME> D_plotme(
     "plotme", "plotme driver",
     "this is a long description for the plotme driver", "pltme",
-    false, // backend does not support subpaths
+    true, // backend not support subpaths
     // if subpathes are supported, the backend must deal with
     // sequences of the following form
     // moveto (start of subpath)

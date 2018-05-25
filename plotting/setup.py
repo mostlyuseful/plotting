@@ -3,11 +3,15 @@ from setuptools import setup, Extension
 extensions = [
     Extension("plotting.polyfill._polyfill",
               # ["plotting/polyfill/polyfill_wrap_boost.cxx"],
-              ["plotting/polyfill/polyfill_wrap_pybind.cxx"],
+              [
+                "plotting/polyfill/polyfill_wrap_pybind.cxx",
+                "plotting/polyfill/external/polyclipping/cpp/clipper.cpp"
+              ],
               include_dirs=[
                   "plotting/polyfill/external/pybind11/include",
-                  "plotting/polyfill/external/range-v3/include/",
-                  "plotting/polyfill/external/debugbreak/"
+                  "plotting/polyfill/external/range-v3/include",
+                  "plotting/polyfill/external/debugbreak",
+                  "plotting/polyfill/external/polyclipping/cpp"
               ],
               libraries=["boost_python-py35", "python3.5m"],
               extra_compile_args=["-std=c++1z"] #, "-ftime-report"],
