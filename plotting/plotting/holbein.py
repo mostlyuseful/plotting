@@ -1,9 +1,11 @@
 from pipetools import pipe
 from plotting.svg2lines import ServodPenGcodeEmitter, overdraw_path_coll, sort_path, Rectangle, convert_ps_to_pltme, \
-    convert_svg_to_pltme, parse_pltme, Path, PathCollection
+    convert_svg_to_pltme, parse_pltme, SingleStrokePath, PathCollection, PltmePath, PltmePathGroup
 from matplotlib import pyplot as plt
 from matplotlib import patches
-from plotting.fill_old import raster_polygon
+from plotting.fill_pyclipper import raster_polygon
+from typing import Iterable
+import numpy as np
 
 
 def display(plater, stock, paths):
@@ -18,14 +20,20 @@ def display(plater, stock, paths):
     plt.show()
 
 
-def fill_paths(pc: PathCollection, fill_distance, merge_distance) -> PathCollection:
+def pltmepath2sspath(input: PltmePath, style, color) -> SingleStrokePath:
+    xx, yy = np.asarray(input.coordinates).T
+    return SingleStrokePath(xx, yy, style, color)
+
+
+def convert_paths(path_groups: Iterable[PltmePathGroup], fill_distance, merge_distance) -> PathCollection:
     out = []
-    for path in pc.paths:
-        if path.style.lower() in ('fill', 'eofill'):
-            print(path.color)
-            out.extend((Path(x=p.xs, y=p.ys, style=None, color=None) for p in polyfill.raster_merge_polygon(path.x, path.y, fill_distance, merge_distance)))
+    for group in path_groups:
+        if group.style.upper() in ('FILL', 'EOFILL'):
+            #rastered = raster_merge_polygon([p.coordinates for p in group.paths], fill_distance, merge_distance)
+            rastered = raster_polygon([p.coordinates for p in group.paths], fill_distance)
+            out.extend(SingleStrokePath.from_zipped(xy, group.style, group.color) for xy in rastered)
         else:
-            out.append(path)
+            out.extend(pltmepath2sspath(p, group.style, group.color) for p in group.paths)
     return PathCollection(out)
 
 
@@ -36,16 +44,16 @@ fill_distance = 1.0  # mm, distance between filled polygon interior lines
 merge_distance = 1.1  # mm, distance between filled polygon interior lines
 gcode_emitter = ServodPenGcodeEmitter(safe_z=100.0, working_z=80.0, pin_number=24, value_up=0, value_down=1,
                                       dwell_down_ms=500, dwell_up_ms=500)
-#PS_FILEPATH = '/home/moe/dev/plotter/images/out.eps'
-# input_pc = parse_pltme(convert_ps_to_pltme(PS_FILEPATH))
-input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
-transformed_pc = input_pc.scale(0.3).translate(0, 0)
-filled = fill_paths(transformed_pc, fill_distance, merge_distance)
+input_pc = parse_pltme(convert_ps_to_pltme('/home/moe/dev/plotter/images/out.eps'))
+# input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
+transformed_pc = [group.scale(1.0).translate(0, 0) for group in input_pc]
+filled = convert_paths(transformed_pc, fill_distance, merge_distance)
 overdrawn = overdraw_path_coll(filled, 0.5)
-sorted_paths = sort_path(overdrawn)
-output_pc = sorted_paths
+#sorted_paths = sort_path(overdrawn)
+#output_pc = sorted_paths
+output_pc = overdrawn
 
-display(plater, stock, output_pc.paths)
+#display(plater, stock, output_pc.paths)
 
 gcode_lines = gcode_emitter.generate(output_pc)
 with open('holbein.gcode', 'w') as f:

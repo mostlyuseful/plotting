@@ -79,7 +79,7 @@ void drvPLOTME::show_path() {
     outf << this->currentR() << ";" << this->currentG() << ";" << this->currentB() << std::endl;
 
     Point currentPoint(0.0f, 0.0f);
-    const Point firstPoint = pathElement(0).getPoint(0);
+    // const Point firstPoint = pathElement(0).getPoint(0);
 
     for (unsigned int n = 0; n < numberOfElementsInPath(); n++) {
         const basedrawingelement &elem = pathElement(n);
@@ -95,10 +95,10 @@ void drvPLOTME::show_path() {
             outf << "LINETO;" << p.x_ << ";" << p.y_ << "\n";
             currentPoint = p;
         } break;
-        case closepath:
-            outf << "LINETO;" << firstPoint.x_ << ";" << firstPoint.y_ << "\n";
-            break;
-
+        case closepath: {
+            const Point &p = elem.getPoint(0);
+            outf << "CLOSEPATH;" << p.x_ << ";" << p.y_ << "\n";
+        } break;
         case curveto: {
             const Point &cp1 = elem.getPoint(0);
             const Point &cp2 = elem.getPoint(1);

@@ -1,9 +1,15 @@
 import io
 import subprocess
 import numpy as np
+from transducer.functional import compose
+from transducer.eager import transduce
+from transducer.transducers import scanning, reducing, mapping, filtering
+from transducer.reducers import appending, expecting_single
 from collections import namedtuple
 from functools import reduce
+from itertools import chain
 from typing import Iterable
+from plotting.partitioning import partitioning
 
 PSTOEDIT_CMD = '/home/moe/dev/plotter/pstoedit/prefix/bin/pstoedit'
 
@@ -25,7 +31,7 @@ def convert_svg_to_pltme(svg_path, pstoedit_cmd=PSTOEDIT_CMD):
     return raw
 
 
-class Path(object):
+class SingleStrokePath(object):
     __slots__ = ['x', 'y', 'style', 'color']
 
     def __init__(self, x, y, style, color):
@@ -34,17 +40,22 @@ class Path(object):
         self.style = style
         self.color = color
 
+    @classmethod
+    def from_zipped(cls, xy, style, color):
+        xx, yy = np.asarray(xy).T
+        return SingleStrokePath(xx, yy, style, color)
+
     def translate(self, dx, dy):
-        return Path(x=np.asanyarray(self.x) + dx,
-                    y=np.asanyarray(self.y) + dy,
-                    style=self.style,
-                    color=self.color)
+        return SingleStrokePath(x=np.asanyarray(self.x) + dx,
+                                y=np.asanyarray(self.y) + dy,
+                                style=self.style,
+                                color=self.color)
 
     def scale(self, factor):
-        return Path(x=factor * np.asanyarray(self.x),
-                    y=factor * np.asanyarray(self.y),
-                    style=self.style,
-                    color=self.color)
+        return SingleStrokePath(x=factor * np.asanyarray(self.x),
+                                y=factor * np.asanyarray(self.y),
+                                style=self.style,
+                                color=self.color)
 
     def length(self):
         dx = np.diff(self.x)
@@ -75,7 +86,7 @@ class Path(object):
     def append(self, other_path):
         x = np.hstack([self.x, other_path.x])
         y = np.hstack([self.y, other_path.y])
-        return Path(x, y, self.style, self.color)
+        return SingleStrokePath(x, y, self.style, self.color)
 
     def __str__(self):
         return '<Path N={} L={}>'.format(len(self.x), self.length())
@@ -109,14 +120,36 @@ class PathCollection(object):
         self.paths = paths
 
     def minmax_x(self):
-        min_x = min(min(p.x) for p in self.paths)
-        max_x = max(max(p.x) for p in self.paths)
-        return min_x, max_x
+        def r(accu, item):
+            min_x = min(accu[0], item[0])
+            max_x = max(accu[1], item[1])
+            return min_x, max_x
+
+        minmax_accu = transduce(
+            transducer=pipe(
+                mapping(lambda p: p.minmax_x()),
+                reducing(r)
+            ),
+            reducer=expecting_single(),
+            iterable=self.paths)
+
+        return minmax_accu
 
     def minmax_y(self):
-        min_y = min(min(p.y) for p in self.paths)
-        max_y = max(max(p.y) for p in self.paths)
-        return min_y, max_y
+        def r(accu, item):
+            min_y = min(accu[0], item[0])
+            max_y = max(accu[1], item[1])
+            return min_y, max_y
+
+        minmax_accu = transduce(
+            transducer=pipe(
+                mapping(lambda p: p.minmax_y()),
+                reducing(r)
+            ),
+            reducer=expecting_single(),
+            iterable=self.paths)
+
+        return minmax_accu
 
     def width(self):
         min_x, max_x = self.minmax_x()
@@ -144,46 +177,121 @@ class PathCollection(object):
         return PathCollection(translated_paths)
 
 
-def parse_color(parts):
-    r, g, b = [float(_) for _ in parts]
-    return r, g, b
+class PltmePath(object):
+    __slots__ = ['coordinates']
+
+    def __init__(self, coordinates):
+        self.coordinates = coordinates
+
+    def __str__(self):
+        return 'Path ' + ', '.join(str(c) for c in self.coordinates)
+
+    def scale(self, factor):
+        scaled = [(x * factor, y * factor) for (x, y) in self.coordinates]
+        return PltmePath(scaled)
+
+    def translate(self, tx, ty):
+        translated = [(x + tx, y + ty) for (x, y) in self.coordinates]
+        return PltmePath(translated)
 
 
-def parse_pltme(source: str) -> PathCollection:
-    paths = []
-    xx = []
-    yy = []
-    path_style = None
-    color = None
+class PltmePathGroup(object):
+    __slots__ = ['paths', 'style', 'color']
 
-    def output():
-        nonlocal xx, yy, paths, path_style, color
-        if not xx:
-            return
-        paths.append(Path(xx[::], yy[::], style=path_style, color=color))
-        xx = []
-        yy = []
+    def __init__(self, paths, style, color):
+        self.paths = paths
+        self.style = style
+        self.color = color
 
-    for line in source.splitlines():
-        parts = line.strip().split(';')
-        cmd = parts[0].upper()
-        if cmd == 'STARTPATH':
-            path_style = parts[1].upper()
-            color_parts = parts[2:]
-            color = parse_color(color_parts[:3])
-            output()
-        elif cmd == 'MOVETO':
-            output()
-            xx = [float(parts[1])]
-            yy = [float(parts[2])]
-        elif cmd == 'LINETO':
-            xx.append(float(parts[1]))
-            yy.append(float(parts[2]))
-        else:
-            raise RuntimeError('Unexpected cmd `{}`'.format(cmd))
-    output()
+    def __str__(self):
+        s = ['Path group: style={}, color={}'.format(self.style, self.color)]
+        s += ['{} paths:'.format(len(self.paths))]
+        s += ['\t' + str(p) for p in self.paths]
+        return '\n'.join(s)
 
-    return PathCollection(paths=paths)
+    __repr__ = __str__
+
+    def scale(self, factor):
+        scaled = [p.scale(factor) for p in self.paths]
+        return PltmePathGroup(scaled, self.style, self.color)
+
+    def translate(self, tx, ty):
+        translated = [p.translate(tx, ty) for p in self.paths]
+        return PltmePathGroup(translated, self.style, self.color)
+
+
+def parse_pltme(source: str):
+    def parse_path(lines):
+        def coords(s):
+            cmd, x, y = s.split(';')
+            return float(x), float(y)
+
+        coords = [coords(l) for l in lines]
+        return PltmePath(coords)
+
+    def parse_group(lines):
+        cmd, path_type, r, g, b = lines[0].split(';')
+        color = float(r), float(g), float(b)
+        strokes = transduce(
+            compose(
+                partitioning(lambda s: s.upper().startswith('MOVETO;')),
+                filtering(lambda lines: len(lines) > 1),
+                mapping(parse_path)
+            ),
+            appending(),
+            lines[1:])
+        path = PltmePathGroup(strokes, path_type, color)
+        return path
+
+    return transduce(
+        compose(
+            mapping(lambda s: s.strip()),
+            partitioning(lambda s: s.upper().startswith('STARTPATH;')),
+            mapping(parse_group)
+        ),
+        appending(),
+        source.splitlines())
+
+
+# def parse_color(parts):
+#     r, g, b = [float(_) for _ in parts]
+#     return r, g, b
+#
+# def parse_pltme(source: str) -> PathCollection:
+#     paths = []
+#     xx = []
+#     yy = []
+#     path_style = None
+#     color = None
+#
+#     def output():
+#         nonlocal xx, yy, paths, path_style, color
+#         if not xx:
+#             return
+#         paths.append(SingleStrokePath(xx[::], yy[::], style=path_style, color=color))
+#         xx = []
+#         yy = []
+#
+#     for line in source.splitlines():
+#         parts = line.strip().split(';')
+#         cmd = parts[0].upper()
+#         if cmd == 'STARTPATH':
+#             path_style = parts[1].upper()
+#             color_parts = parts[2:]
+#             color = parse_color(color_parts[:3])
+#             output()
+#         elif cmd == 'MOVETO':
+#             output()
+#             xx = [float(parts[1])]
+#             yy = [float(parts[2])]
+#         elif cmd == 'LINETO':
+#             xx.append(float(parts[1]))
+#             yy.append(float(parts[2]))
+#         else:
+#             raise RuntimeError('Unexpected cmd `{}`'.format(cmd))
+#     output()
+#
+#     return PathCollection(paths=paths)
 
 
 def parse_pltme_file(file_path):
@@ -216,7 +324,7 @@ class GcodeEmitter(object):
     def emit_pendown(self):
         raise NotImplementedError("Implement in subclass")
 
-    def emit_paths(self, paths: Iterable[Path]):
+    def emit_paths(self, paths: Iterable[SingleStrokePath]):
         for p in paths:
             # Move pen to standby height
             yield from self.emit_penup()
@@ -395,7 +503,7 @@ def overdraw_path(path, amount):
         y = np.interp(remaining, [0, d], [last_y, next_y])
         out_x.append(x)
         out_y.append(y)
-    return Path(out_x, out_y, path.style, path.color)
+    return SingleStrokePath(out_x, out_y, path.style, path.color)
 
 
 def overdraw_path_coll(path_coll, amount):
@@ -416,7 +524,7 @@ def filling_pattern(width, height, delta):
             # yield [y, y+delta]
             y += delta
 
-    path = Path([], [], None, None)
+    path = SingleStrokePath([], [], None, None)
     y = 0.0
     g = gen()
     g2 = gen2()
@@ -427,5 +535,5 @@ def filling_pattern(width, height, delta):
     return path
 
 
-def reversed_path(path: Path):
-    return Path(path.x[::-1], path.y[::-1], path.style, path.color)
+def reversed_path(path: SingleStrokePath):
+    return SingleStrokePath(path.x[::-1], path.y[::-1], path.style, path.color)

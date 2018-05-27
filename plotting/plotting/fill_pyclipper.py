@@ -37,13 +37,14 @@ def scale_paths(paths, s):
 
 def raster_polygon(poly_paths, dy: float = 1.0):
     path_scale = 1000
+    blown_up_dy = dy * path_scale
     blown_up_poly_paths = scale_paths(poly_paths, path_scale)
-    blown_up_lines = generate_lines_pattern(bounds_paths(blown_up_poly_paths), dy)
+    blown_up_lines = generate_lines_pattern(bounds_paths(blown_up_poly_paths), blown_up_dy)
     pc = pyclipper.Pyclipper()
     pc.AddPaths(blown_up_poly_paths, pyclipper.PT_CLIP, True)
     pc.AddPaths(blown_up_lines, pyclipper.PT_SUBJECT, False)
     solution = pc.Execute2(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
-    assert solution.depth == 1
+    assert solution.depth <= 1
     out_paths = []
     for child in solution.Childs:
         assert child.IsOpen
