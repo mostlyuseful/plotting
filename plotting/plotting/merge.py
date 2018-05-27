@@ -1,12 +1,13 @@
 import numpy as np
 from plotting import svg2lines as s2l
 
+
 def make_candidate(p, q, q_orig):
     dst = np.hypot(*np.subtract(p.end(), q.start()))
     return dst, p, q, q_orig
 
 
-def merge_paths(coll, distance_threshold):
+def merge_paths(coll, distance_threshold, clipping_paths):
     pool = coll.paths[::]
     while True:
         merged_at_least_one = False

@@ -3,7 +3,7 @@ from plotting.svg2lines import ServodPenGcodeEmitter, overdraw_path_coll, sort_p
     convert_svg_to_pltme, parse_pltme, Path, PathCollection
 from matplotlib import pyplot as plt
 from matplotlib import patches
-from plotting.fill import raster_polygon
+from plotting.fill_old import raster_polygon
 
 
 def display(plater, stock, paths):
