@@ -1,11 +1,25 @@
 from setuptools import setup, Extension
 
+source_names = [
+    'blow_up.cpp',
+    'dpath_utils.cpp',
+    'edge.cpp',
+    'intersection.cpp',
+    'line.cpp',
+    'mergepaths.cpp',
+    'parametricline.cpp',
+    'path.cpp',
+    'polygon.cpp',
+    'raster.cpp',
+    'polyfill_wrap_pybind.cxx',
+    'external/polyclipping/cpp/clipper.cpp'
+
+]
+source_paths = ["plotting/polyfill/" + name for name in source_names]
+
 extensions = [
     Extension("plotting.polyfill._polyfill",
-              [
-                  "plotting/polyfill/polyfill_wrap_pybind.cxx",
-                  "plotting/polyfill/external/polyclipping/cpp/clipper.cpp"
-              ],
+              source_paths,
               include_dirs=[
                   "plotting/polyfill/external/pybind11/include",
                   "plotting/polyfill/external/range-v3/include",

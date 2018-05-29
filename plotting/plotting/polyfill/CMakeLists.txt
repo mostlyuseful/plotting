@@ -6,6 +6,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 
 add_executable(polyfill-test
     main.cpp
+    blow_up.cpp
+    dpath_utils.cpp
+    edge.cpp
+    intersection.cpp
+    line.cpp
+    mergepaths.cpp
+    parametricline.cpp
+    path.cpp
+    polygon.cpp
+    raster.cpp
     ${PROJECT_SOURCE_DIR}/polyfill_wrap_pybind.cxx
     ${PROJECT_SOURCE_DIR}/external/polyclipping/cpp/clipper.cpp
 )
