@@ -1,3 +1,4 @@
+#include "rasterline.hpp"
 #include "simpleapi.hpp"
 
 #include <pybind11/pybind11.h>
@@ -11,6 +12,7 @@ PYBIND11_MODULE(_polyfill, m)
 {
     m.def("raster_polygon", &raster_polygon);
     m.def("raster_merge_polygon", &raster_merge_polygon);
+    m.def("raster_merge_polygon_eo", &raster_merge_polygon_eo);
     
     py::class_<RasterLine>(m, "RasterLine")
         .def_readonly("spans", &RasterLine::spans)
@@ -23,4 +25,5 @@ PYBIND11_MODULE(_polyfill, m)
     py::class_<Path>(m, "Path")
         .def_readonly("xs", &Path::xs)
         .def_readonly("ys", &Path::ys);
+
 }

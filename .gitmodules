@@ -13,3 +13,12 @@
 [submodule "plotting/plotting/polyfill/external/pybind11"]
 	path = plotting/plotting/polyfill/external/pybind11
 	url = https://github.com/pybind/pybind11.git
+[submodule "plotting/plotting/polyfill/external/cppitertools"]
+	path = plotting/plotting/polyfill/external/cppitertools
+	url = https://github.com/ryanhaining/cppitertools.git
+[submodule "plotting/plotting/polyfill/external/flann"]
+	path = plotting/plotting/polyfill/external/flann
+	url = https://github.com/mariusmuja/flann.git
+[submodule "plotting/plotting/polyfill/external/kgraph"]
+	path = plotting/plotting/polyfill/external/kgraph
+	url = https://github.com/aaalgo/kgraph.git
