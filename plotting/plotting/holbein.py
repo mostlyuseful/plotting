@@ -56,16 +56,17 @@ fill_distance = 2.0 # mm, distance between filled polygon interior lines
 merge_distance = 2*fill_distance  # mm, distance between filled polygon interior lines
 gcode_emitter = ServodPenGcodeEmitter(safe_z=100.0, working_z=80.0, pin_number=24, value_up=0, value_down=1,
                                       dwell_down_ms=500, dwell_up_ms=500)
-#input_pc = parse_pltme(convert_ps_to_pltme('/home/moe/dev/plotter/images/out.eps'))
-input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
+input_pc = parse_pltme(convert_ps_to_pltme('/home/moe/dev/plotter/images/out.eps'))
+#input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
 
-for group in input_pc:
-    print("[")
-    for path in group.paths:
-        print(path.coordinates, ",")
-    print("],")
+if 0:
+    for group in input_pc:
+        print("[")
+        for path in group.paths:
+            print(path.coordinates, ",")
+        print("],")
+    1/0
 
-1/0
 transformed_pc = [group.scale(1.0).translate(0, 0) for group in input_pc]
 filled = convert_paths(transformed_pc, fill_distance, merge_distance)
 overdrawn = overdraw_path_coll(filled, 0.5)
