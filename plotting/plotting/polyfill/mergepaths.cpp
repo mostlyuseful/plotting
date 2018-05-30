@@ -3,6 +3,7 @@
 #include "blow_up.hpp"
 #include "path.hpp"
 #include "polygon.hpp"
+#include "pnpoly.hpp"
 
 #include <sliding_window.hpp>
 
@@ -56,6 +57,55 @@ double cordLength(ClipperLib::Path const& path) {
     return length;
 }
 
+class PnPolyVertices {
+public:
+    std::vector<float> x;
+    std::vector<float> y;
+};
+
+PnPolyVertices ClipperPathsToPnPoly(ClipperLib::Paths const& paths) {
+    PnPolyVertices out;
+    for(auto const& path : paths) {
+        out.x.push_back(0);
+        out.y.push_back(0);
+        for(auto const& pt : path) {
+            out.x.push_back(pt.X);
+            out.y.push_back(pt.Y);
+        }
+        auto const& first = path.front();
+        auto const& last = path.back();
+        if(first!=last) {
+            out.x.push_back(first.X);
+            out.y.push_back(first.Y);
+        }
+    }
+    out.x.push_back(0);
+    out.y.push_back(0);
+
+    return out;
+}
+
+struct Point {
+    double x;
+    double y;
+};
+
+std::vector<Point> sample_line(ClipperLib::Path const& line, int const num_samples) {
+    auto const& p = line[0];
+    auto const& q = line[1];
+    double const dx = q.X-p.X;
+    double const dy = q.Y-p.Y;
+    std::vector<Point> points;
+    points.reserve(num_samples);
+    for (int i = 0; i<num_samples; ++i) {
+        double const frac = i*(1.0/(num_samples-1));
+        double const x = frac * dx + p.X;
+        double const y = frac * dy + p.Y;
+        points.push_back({x,y});
+    }
+    return points;
+}
+
 std::vector<Path>
 merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
                      std::vector<Path> const &paths,
@@ -82,6 +132,8 @@ merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
     }();
 
 
+    PnPolyVertices offsetted_vertices = ClipperPathsToPnPoly(offsetted);
+
     /*
     auto n_points = [](ClipperLib::Paths const& paths) {
         return std::accumulate(paths.cbegin(), paths.cend(), 0, [](auto const& accu, ClipperLib::Path const& p){
@@ -93,12 +145,9 @@ merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
     std::cerr << "After cleaning: " << n_points(offsetted) << std::endl;
     //*/
 
-    auto violatesPolygon = [&offsetted,
+    auto violatesPolygon = [&offsetted_vertices,
                             blowUpFactor](Candidate const &c) -> bool {
         namespace CL = ClipperLib;
-        CL::Clipper clipper;
-        CL::PolyTree solution;
-
         auto const &P = c.p->end();
         auto const &Q = c.q->start();
         CL::Path const connectorLine{
@@ -107,35 +156,14 @@ merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
             {static_cast<CL::cInt>(Q(0) * blowUpFactor),
              static_cast<CL::cInt>(Q(1) * blowUpFactor)}};
 
-        // clipper.AddPaths(blownUpPolygon, CL::ptClip, true);
-        clipper.AddPaths(offsetted, CL::ptClip, true);
-        clipper.AddPath(connectorLine, CL::ptSubject, false);
-        bool const ok = clipper.Execute(CL::ctDifference, solution,
-                                        CL::pftEvenOdd, CL::pftEvenOdd);
-        // If clipping fails, just pretend everything is okay :)
-        if (!ok) {
-            std::cerr << "!OK" << std::endl;
-            return false;
+        // Sample line, perform point-in-polygon tests
+        int const num_samples = 10;
+        for (auto&& pt : sample_line(connectorLine, num_samples)) {
+            bool inside = pt_in_poly(offsetted_vertices.x, offsetted_vertices.y, pt.x, pt.y);
+            if(!inside) {return true;}
         }
-        // If something remains after clipping, they are lying outside the polygon
-        bool const somethingLiesOutside = (solution.Total() != 0);
 
-        /*
-        double const outsideCordLength = [&solution](){
-            ClipperLib::Paths linePaths;
-            ClipperLib::OpenPathsFromPolyTree(solution, linePaths);
-            return std::accumulate(
-                        linePaths.cbegin(), linePaths.cend(),
-                        0.0,
-                        [](double const accu, ClipperLib::Path const& path){
-                return accu + cordLength(path);
-            });
-        }();
-
-        std::cerr << "DEBUG: outsideCordLength = " << outsideCordLength << std::endl;
-        //*/
-
-        return somethingLiesOutside;
+        return false;
     };
 
     std::list<std::shared_ptr<Path>> pool =
