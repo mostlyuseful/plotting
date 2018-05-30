@@ -1,0 +1,4 @@
+#ifndef PNPOLY_RTREE_HPP
+#define PNPOLY_RTREE_HPP
+
+#endif // PNPOLY_RTREE_HPP
