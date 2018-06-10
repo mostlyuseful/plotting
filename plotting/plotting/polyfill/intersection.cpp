@@ -13,5 +13,5 @@ Intersection intersect_lines(Line const& l1, Line const& l2) {
     auto const s2 = l2.parametric.solve_for_s(location);
     bool const on_l1 = (s1>=0) && (s1<=1);
     bool const on_l2 = (s2>=0) && (s2<=1);
-    return IntersectionPoint{location, on_l1, on_l2};
+    return IntersectionPoint{location, on_l1, on_l2, s1, s2};
 }

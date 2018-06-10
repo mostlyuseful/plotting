@@ -9,6 +9,8 @@ struct IntersectionPoint {
     Eigen::Array2d location;
     bool on_l1;
     bool on_l2;
+    double s1;
+    double s2;
 };
 
 enum class DenormalIntersection {

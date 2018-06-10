@@ -28,7 +28,9 @@ extensions = [
                   "plotting/polyfill/external/cppitertools"
               ],
               libraries=["python3.5m"],
-              extra_compile_args=["-std=c++1z", "-fdiagnostics-color"]  # , "-ftime-report"],
+              # , "-ftime-report"],
+              extra_compile_args=["-std=c++1z",
+                                  "-fdiagnostics-color", "-march=native"]
               )
 ]
 

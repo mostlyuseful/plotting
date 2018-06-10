@@ -96,6 +96,7 @@ inline std::vector<Path> merge_close_paths(Polygon const &srcPolygon,
     while (true) {
         bool merged_at_least_one = false;
         for (auto const &p : pool) {
+            // TODO("Take first possible candidate without evaluating every candidate");
             double min_dst = std::numeric_limits<double>::infinity();
             std::shared_ptr<Path> min_p;
             std::shared_ptr<Path> min_q;
