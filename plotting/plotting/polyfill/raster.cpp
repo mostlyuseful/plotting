@@ -41,6 +41,9 @@ Bounds bounds_extend(Bounds const &a, Bounds const &b) {
 }
 
 boost::optional<Bounds> bounds_paths(ClipperLib::Paths const &paths) {
+    if (paths.empty()) {
+        return {};
+    }
     boost::optional<Bounds> empty_bounds;
     return std::accumulate(
         paths.cbegin(), paths.cend(), empty_bounds,
@@ -48,7 +51,8 @@ boost::optional<Bounds> bounds_paths(ClipperLib::Paths const &paths) {
             if (!accu) {
                 return boost::make_optional(bounds_path(p));
             } else {
-                return boost::make_optional(bounds_extend(*accu, bounds_path(p)));
+                return boost::make_optional(
+                    bounds_extend(*accu, bounds_path(p)));
             }
         });
 }
@@ -56,7 +60,7 @@ boost::optional<Bounds> bounds_paths(ClipperLib::Paths const &paths) {
 ClipperLib::Paths generate_lines_pattern(Bounds const &bounds,
                                          double const dy) {
     ClipperLib::Paths out;
-    for(double y=bounds.min_y; y<bounds.max_y; y+=dy){
+    for (double y = bounds.min_y; y < bounds.max_y; y += dy) {
         auto const iy = static_cast<ClipperLib::cInt>(y);
         ClipperLib::Path line = {{bounds.min_x, iy}, {bounds.max_x, iy}};
         out.emplace_back(line);
@@ -69,8 +73,11 @@ ClipperLib::DPaths raster_polygon_eo(ClipperLib::DPaths const &polygon_paths,
     double const path_scale = 1000;
     double const blown_up_dy = dy * path_scale;
     auto const blown_up_poly_paths = blow_up(polygon_paths, path_scale);
-    auto const blown_up_lines =
-        generate_lines_pattern(*bounds_paths(blown_up_poly_paths), blown_up_dy);
+    auto const bounds = bounds_paths(blown_up_poly_paths);
+    if (!bounds) {
+        return {};
+    }
+    auto const blown_up_lines = generate_lines_pattern(*bounds, blown_up_dy);
     namespace CL = ClipperLib;
     CL::Clipper clipper;
     CL::PolyTree solution;
@@ -94,7 +101,7 @@ ClipperLib::DPaths raster_polygon_eo(ClipperLib::DPaths const &polygon_paths,
         for (auto const &pt : path) {
             double const x = pt.X / path_scale;
             double const y = pt.Y / path_scale;
-            out_path.emplace_back(x,y);
+            out_path.emplace_back(x, y);
         }
         out_paths.emplace_back(out_path);
     }

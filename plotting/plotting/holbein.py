@@ -60,7 +60,7 @@ def convert_paths(path_groups: Iterable[PltmePathGroup], fill_distance, merge_di
             else:
                 simplified = [p.coordinates for p in group.paths]
             print("#{} rastering {} edges".format(i, num_edges(simplified)))
-            store(simplified)
+            # store(simplified)
             rastered = raster_merge_polygon_eo(simplified, fill_distance, merge_distance)
             out.extend(SingleStrokePath(r.xs, r.ys, group.style, group.color) for r in rastered)
             print(len(rastered))
@@ -73,9 +73,9 @@ def convert_paths(path_groups: Iterable[PltmePathGroup], fill_distance, merge_di
 plater = Rectangle(xmin=0, width=200, ymin=0, height=200)
 stock = Rectangle(xmin=70, width=100, ymin=20, height=40)
 simplify = False
-simplify_amount = 0.1
+simplify_amount = 0.01
 overdraw_amount = 0.5  # g-code units, i.e. mm
-fill_distance = 0.5 # mm, distance between filled polygon interior lines
+fill_distance = 0.1 # mm, distance between filled polygon interior lines
 merge_distance = 10  # mm, distance between filled polygon interior lines
 sort_paths = False
 gcode_emitter = ServodPenGcodeEmitter(safe_z=100.0, working_z=80.0, pin_number=24, value_up=0, value_down=1,
@@ -94,6 +94,7 @@ if 0:
 transformed_pc = [group.scale(0.2).translate(0, 0) for group in input_pc]
 filled = convert_paths(transformed_pc, fill_distance, merge_distance)
 overdrawn = overdraw_path_coll(filled, 0.5)
+TODO("sort_paths in C++")
 if sort_paths:
     sorted_paths = sort_path(overdrawn)
     output_pc = sorted_paths

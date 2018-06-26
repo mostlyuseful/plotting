@@ -29,3 +29,5 @@ Path Path::append(Path const &tail) const {
     expanded_ys << ys, tail.ys;
     return Path{expanded_xs, expanded_ys};
 }
+
+

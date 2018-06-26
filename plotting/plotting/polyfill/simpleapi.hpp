@@ -5,6 +5,7 @@
 #include "dpath.hpp"
 #include "dpath_utils.hpp"
 #include "mergepaths.hpp"
+#include "mergeclosepaths.hpp"
 #include "polygon.hpp"
 #include "raster.hpp"
 
@@ -21,7 +22,7 @@ raster_polygon(std::vector<double> xx, std::vector<double> yy, double dy) {
   return pgon.raster(dy);
 }
 
-inline std::vector<Path> raster_merge_polygon(std::vector<double> xx,
+/*inline std::vector<Path> raster_merge_polygon(std::vector<double> xx,
                                               std::vector<double> yy, double dy,
                                               double max_merge_distance) {
   auto &&xs = Eigen::Map<Eigen::ArrayXd>(xx.data(),
@@ -34,7 +35,7 @@ inline std::vector<Path> raster_merge_polygon(std::vector<double> xx,
   std::vector<Path> merged_paths =
       merge_close_paths(pgon, paths, max_merge_distance);
   return merged_paths;
-}
+}//*/
 
 inline std::vector<Path>
 raster_merge_polygon_eo(ClipperLib::DPaths polygon_paths, double dy,

@@ -1,9 +1,8 @@
 #include "mergepaths.hpp"
-
 #include "blow_up.hpp"
+#include "merger_rtree.hpp"
 #include "path.hpp"
 #include "polygon.hpp"
-
 #include "pnpoly_rtree.hpp"
 
 #include <sliding_window.hpp>
@@ -17,20 +16,20 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
 
+#include <boost/geometry.hpp>
+
+#include <algorithm>
+#include <deque>
 #include <iostream>
 #include <limits>
 #include <list>
 #include <memory>
 #include <numeric>
+#include <unordered_set>
+#include <x86intrin.h>
 
 double dst(Eigen::Array2d const &a, Eigen::Array2d const &b) {
   return (a - b).matrix().norm();
-}
-
-Candidate make_candidate(std::shared_ptr<Path> p, std::shared_ptr<Path> q,
-                         std::shared_ptr<Path> q_orig) {
-  auto const dst = (p->end() - q->start()).matrix().norm();
-  return {dst, p, q, q_orig};
 }
 
 ClipperLib::Path PolygonToClipperPath(Polygon const &pgon,
@@ -110,6 +109,13 @@ std::vector<Point> sample_line(ClipperLib::Path const &line,
 std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
                                        std::vector<Path> const &paths,
                                        double const max_merge_distance) {
+  EndpointBasedMerger merger(srcPolygon, paths, max_merge_distance);
+  return merger.merge();
+} //*/
+
+std::vector<Path> merge_close_paths_eo_(ClipperLib::DPaths const &srcPolygon,
+                                        std::vector<Path> const &paths,
+                                        double const max_merge_distance) {
   using namespace ranges;
 
   // ClipperLib uses integer math, we use floating-point.
@@ -132,17 +138,6 @@ std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
     return out;
   }();
 
-  /*
-  auto n_points = [](ClipperLib::Paths const& paths) {
-      return std::accumulate(paths.cbegin(), paths.cend(), 0, [](auto const&
-  accu, ClipperLib::Path const& p){ return accu + p.size();
-      });
-  };
-  std::cerr << "Before cleaning: " << n_points(offsetted) << std::endl;
-  ClipperLib::CleanPolygons(offsetted);
-  std::cerr << "After cleaning: " << n_points(offsetted) << std::endl;
-  //*/
-
   pip::rtree::MemoizedInclusionTester inclusionTester(offsetted);
 
   auto violatesPolygon = [&inclusionTester,
@@ -150,29 +145,12 @@ std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
     namespace CL = ClipperLib;
     auto const &P = c.p->end();
     auto const &Q = c.q->start();
-    /*
-    CL::Path const connectorLine{
-        {static_cast<CL::cInt>(P(0) * blowUpFactor),
-         static_cast<CL::cInt>(P(1) * blowUpFactor)},
-        {static_cast<CL::cInt>(Q(0) * blowUpFactor),
-         static_cast<CL::cInt>(Q(1) * blowUpFactor)}};
-
-    // Sample line, perform point-in-polygon tests
-    int const num_samples = 10;
-    for (auto&& pt : sample_line(connectorLine, num_samples)) {
-        bool inside = inclusionTester.contains(pt.x, pt.y);
-        if(!inside) {return true;}
-    }
-
-    return false;//*/
-
-    //*/
     double const x1 = P(0) * blowUpFactor;
     double const y1 = P(1) * blowUpFactor;
     double const x2 = Q(0) * blowUpFactor;
     double const y2 = Q(1) * blowUpFactor;
     Line const connectorLine = Line::from_endpoints(x1, y1, x2, y2);
-    return !inclusionTester.contains(connectorLine);//*/
+    return !inclusionTester.contains(connectorLine);
   };
 
   std::list<std::shared_ptr<Path>> pool =
@@ -198,6 +176,7 @@ std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
         out.push_back(q);
       }
     }
+    // std::cout << "Found " << out.size() << " candidates" << std::endl;
     return out;
   };
 
@@ -241,6 +220,7 @@ std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
             min_q_orig = it->q_orig;
           }
         }
+        // if(min_q){break;}
       }
 
       if ((min_dst < max_merge_distance) && (min_q)) {
@@ -257,3 +237,4 @@ std::vector<Path> merge_close_paths_eo(ClipperLib::DPaths const &srcPolygon,
   }
   return pool | view::transform([](auto p) { return *p; }) | to_<std::vector>();
 }
+//*/

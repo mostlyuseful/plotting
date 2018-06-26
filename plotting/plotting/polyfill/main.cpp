@@ -22,11 +22,8 @@ void check_raster(){
 //*/
 
 void check_raster_merge() {
-    // std::vector<double> xx{1, 2, 3, 0.3, 3.7, 1};
-    // std::vector<double> yy{0, 3, 0, 2, 2, 0};
-    std::vector<double> xx{10, 20, 20, 10, 10};
-    std::vector<double> yy{100, 100, 90, 90, 100};
-    auto paths = raster_merge_polygon(xx, yy, 3, 5);
+    ClipperLib::DPaths poly = {{{10,100},{20,100},{20,90},{10,90},{10,100}}};
+    auto paths = raster_merge_polygon_eo(poly, 3, 5);
     for(auto const& p: paths) {
         std::cout << "Path = ";
         for(Eigen::Index i=0; i<p.xs.size();++i) {

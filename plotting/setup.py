@@ -2,12 +2,15 @@ from setuptools import setup, Extension
 
 source_names = [
     'blow_up.cpp',
+    'candidate.cpp',
     'dpath_utils.cpp',
     'edge.cpp',
     'intersection.cpp',
     'line.cpp',
     'mergepaths.cpp',
+    'merger_rtree.cpp',
     'parametricline.cpp',
+    'pnpoly_rtree.cpp',
     'path.cpp',
     'polygon.cpp',
     'raster.cpp',
