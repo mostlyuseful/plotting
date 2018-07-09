@@ -14,6 +14,7 @@ PYBIND11_MODULE(_polyfill, m)
     // m.def("raster_merge_polygon", &raster_merge_polygon);
     m.def("raster_merge_polygon_eo", &raster_merge_polygon_eo);
     m.def("simplify_polygon", &simplify_polygon);
+    m.def("sort_paths", &sort_paths);
     
     py::class_<RasterLine>(m, "RasterLine")
         .def_readonly("spans", &RasterLine::spans)

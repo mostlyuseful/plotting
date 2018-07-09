@@ -1,14 +1,17 @@
 from pipetools import pipe
-from plotting.svg2lines import ServodPenGcodeEmitter, overdraw_path_coll, sort_path, Rectangle, convert_ps_to_pltme, \
+from plotting.svg2lines import ServodPenGcodeEmitter, overdraw_path_coll, Rectangle, convert_ps_to_pltme, \
     convert_svg_to_pltme, parse_pltme, SingleStrokePath, PathCollection, PltmePath, PltmePathGroup
 from matplotlib import pyplot as plt
 from matplotlib import patches
 from plotting.polyfill._polyfill import raster_merge_polygon_eo, simplify_polygon
 from plotting.fill_pyclipper import raster_polygon
 from plotting.merge import merge_close_paths
+from plotting.sort_paths import sort_path_coll
 from typing import Iterable
 import numpy as np
 import json
+
+from matplotlib.collections import LineCollection
 
 
 def display(plater, stock, paths):
@@ -17,11 +20,18 @@ def display(plater, stock, paths):
     plt.gca().add_patch(
         patches.Rectangle([plater.xmin, plater.ymin], plater.width, plater.height, color=[0.4, 0.7, 1.0]))
     plt.gca().add_patch(patches.Rectangle([stock.xmin, stock.ymin], stock.width, stock.height, color=[0.8, 0.3, 0.0]))
-    for p in paths:
-        plt.plot(p.x, p.y, '-k')
+    #for p in paths:
+    #    plt.plot(p.x, p.y, '-k')
+    def as_segment(p):
+      return [(x,y) for (x,y) in zip(p.x, p.y)]
+      
+    segments = [ as_segment(p) for p in paths ]    
+    plt.gca().add_collection(LineCollection(segments, colors=[(0.0,0.0,0.0)]))
+    
     plt.gca().set_aspect('equal')
-    plt.gca().set_xlim(0, 35)
-    plt.gca().set_ylim(0, 30)
+    plt.gca().set_xlim(plater.xmin, plater.xmin+plater.width)
+    plt.gca().set_ylim(plater.ymin, plater.ymin+plater.height)
+    plt.tight_layout(pad=0.1, h_pad=0, w_pad=0)
     plt.show()
 
 
@@ -77,11 +87,11 @@ simplify_amount = 0.01
 overdraw_amount = 0.5  # g-code units, i.e. mm
 fill_distance = 0.1 # mm, distance between filled polygon interior lines
 merge_distance = 10  # mm, distance between filled polygon interior lines
-sort_paths = False
+sort_paths = True
 gcode_emitter = ServodPenGcodeEmitter(safe_z=100.0, working_z=80.0, pin_number=24, value_up=0, value_down=1,
                                       dwell_down_ms=500, dwell_up_ms=500)
-input_pc = parse_pltme(convert_ps_to_pltme('/home/moe/dev/plotter/images/out.eps'))
-#input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
+#input_pc = parse_pltme(convert_ps_to_pltme('/home/moe/dev/plotter/images/out.eps'))
+input_pc = parse_pltme(convert_svg_to_pltme('tri.svg'))
 
 if 0:
     for group in input_pc:
@@ -91,17 +101,18 @@ if 0:
         print("],")
     1/0
 
-transformed_pc = [group.scale(0.2).translate(0, 0) for group in input_pc]
+transformed_pc = [group.scale(0.3).translate(100, 25) for group in input_pc]
 filled = convert_paths(transformed_pc, fill_distance, merge_distance)
 overdrawn = overdraw_path_coll(filled, 0.5)
-TODO("sort_paths in C++")
 if sort_paths:
-    sorted_paths = sort_path(overdrawn)
+    print('Sorting paths',flush=True)
+    sorted_paths = sort_path_coll(overdrawn)
+    print('Paths sorted', flush=True)
     output_pc = sorted_paths
 else:
     output_pc = overdrawn
 
-#display(plater, stock, output_pc.paths)
+display(plater, stock, output_pc.paths)
 
 gcode_lines = gcode_emitter.generate(output_pc)
 with open('holbein.gcode', 'w') as f:

@@ -8,6 +8,7 @@
 #include "mergeclosepaths.hpp"
 #include "polygon.hpp"
 #include "raster.hpp"
+#include "sort_paths.hpp"
 
 #include <iostream>
 #include <vector>
@@ -61,5 +62,11 @@ inline ClipperLib::DPaths simplify_polygon(ClipperLib::DPaths polygon_paths,
   ClipperLib::DPaths deflated_output_paths = blow_up(blown_up_output_paths, 1.0/blowUpFactor);
   return deflated_output_paths;
 }
+
+inline std::vector<std::size_t> sort_paths(std::vector<PathEndpoints> endpoints) {
+  return sort_paths_by_endpoints(std::move(endpoints));
+}
+
+
 
 #endif /* SIMPLEAPI_HPP */

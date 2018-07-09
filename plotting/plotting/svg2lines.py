@@ -445,7 +445,7 @@ def find_nearest(last_path, paths):
     return nearest
 
 
-def sort_path(path_coll):
+def sort_path_(path_coll):
     available = set(path_coll.paths)
     out = [available.pop()]
     # first = path_coll.paths[20]

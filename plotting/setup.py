@@ -14,6 +14,7 @@ source_names = [
     'path.cpp',
     'polygon.cpp',
     'raster.cpp',
+    'sort_paths.cpp',
     'polyfill_wrap_pybind.cxx',
     'external/polyclipping/cpp/clipper.cpp'
 

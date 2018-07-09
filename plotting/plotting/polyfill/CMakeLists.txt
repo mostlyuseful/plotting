@@ -22,6 +22,7 @@ add_executable(polyfill-test
     pnpoly_rtree.cpp
     polygon.cpp
     raster.cpp
+    sort_paths.cpp
     ${PROJECT_SOURCE_DIR}/polyfill_wrap_pybind.cxx
     ${PROJECT_SOURCE_DIR}/external/polyclipping/cpp/clipper.cpp
 )
